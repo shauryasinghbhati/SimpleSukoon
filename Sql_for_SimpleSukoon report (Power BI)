@@ -1,0 +1,73 @@
+-- to check for null or negative values
+SELECT
+  *
+FROM
+  simplesukoon.orders
+WHERE
+  total_amount_paid <= 0;
+
+-- create a table editing the mrp columnn and removing unnecessary columns/data from the original table
+SELECT
+  cust_id,
+  order_type,
+  products.product_id AS pr_id,
+  products.product_name AS product,
+  products.brand,
+  tot_units AS Quantity,
+  tot_units*products.mrp AS amount_paid,
+  payment_type,
+  delivery_pincode
+FROM
+  simplesukoon.orders,
+  simplesukoon.products
+WHERE
+  products.product_id = orders.product_id;
+
+
+-- total value of orders
+SELECT sum(amount_paid) AS total_earnings, (Select SUM(amount_paid) from simplesukoon.annual_report 
+where order_type = 'return') AS returned_order_value, SUM(Quantity) AS total_orders
+FROM simplesukoon.annual_report 
+WHERE amount_paid > 0;
+
+-- most sold product
+SELECT product, brand, pr_id AS product_id, count(pr_id) AS quantity, sum(amount_paid) AS income
+FROM simplesukoon.annual_report 
+WHERE order_type = 'buy'
+GROUP BY product, brand, pr_id
+ORDER BY quantity DESC;
+
+-- customer retention/ no. of repeat customer
+SELECT cust_id, count(cust_id) as repeat_customer
+FROM `simplesukoon.annual_report`
+GROUP BY cust_id 
+ORDER BY repeat_customer DESC;
+
+
+-- value, quantity and products that were returned
+SELECT product, sum(amount_paid) as total_return, count(order_type) as quantity 
+FROM `simplesukoon.annual_report`
+WHERE order_type = 'return'
+group by product
+order by quantity desc;
+
+/* most orders by pincode (change value of order by to get highest paying city, and the most ordered product by them)
+*/
+SELECT product, delivery_pincode, sum(amount_paid) as total_earnings, sum(Quantity) as quantity, city, state 
+FROM `simplesukoon.annual_report` , `simplesukoon.pincode`
+WHERE delivery_pincode = pincode
+group by product, delivery_pincode, city, state
+order by quantity desc;
+
+-- most deliveries by delivery guy 
+SELECT id as ID, name, count(delivery_person_id) as quantity
+FROM `simplesukoon.delivery`, `simplesukoon.orders` 
+WHERE id = delivery_person_id
+GROUP BY id, name
+ORDER BY quantity DESC;
+
+-- most used mode of payment
+SELECT payment_type as mode_of_payment, COUNT (payment_type) AS quantity
+FROM simplesukoon.orders
+GROUP BY payment_type
+ORDER BY quantity DESC;
